@@ -4,518 +4,242 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MediSimplify — Understand Your Medical Results</title>
-  <meta name="description" content="Upload a medical test PDF and get a plain-English explanation powered by local AI — 100% private, no data leaves your computer."/>
+  <meta name="description" content="Upload a medical test PDF and get a plain-English explanation powered by Groq AI — fast, private, and free."/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-
-  <!-- PDF.js from CDN (for in-browser PDF text extraction) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
-    // Set the worker path for PDF.js
     if (typeof pdfjsLib !== 'undefined') {
       pdfjsLib.GlobalWorkerOptions.workerSrc =
         'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
   </script>
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg: #f0f0f8;
-      --sidebar-bg: #1a1a2e;
-      --card-bg: #ffffff;
-      --accent: #1a1a2e;
-      --accent2: #6c63ff;
-      --text: #1a1a2e;
-      --muted: #888;
-      --border: #e5e5f0;
-      --radius: 18px;
+      --bg: #f0f0f8; --card-bg: #fff; --accent: #1a1a2e;
+      --accent2: #6c63ff; --text: #1a1a2e; --muted: #888;
+      --border: #e5e5f0; --radius: 18px;
     }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow: hidden; }
 
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow: hidden;
-    }
-
-    /* ─── ANIMATED LOGIN PAGE ─── */
-    #login-page {
-      position: fixed; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      z-index: 100;
-      overflow: hidden;
-    }
-
+    /* ── LOGIN ── */
+    #login-page { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; overflow: hidden; }
     .login-bg {
       position: absolute; inset: -20%;
-      background: linear-gradient(
-        135deg,
-        #f5a623 0%,
-        #f76b1c 15%,
-        #c0392b 28%,
-        #8e44ad 42%,
-        #6c63ff 55%,
-        #2980b9 68%,
-        #1abc9c 80%,
-        #f39c12 92%,
-        #f5a623 100%
-      );
-      background-size: 400% 400%;
-      animation: gradientShift 12s ease infinite;
+      background: linear-gradient(135deg,#f5a623 0%,#f76b1c 15%,#c0392b 28%,#8e44ad 42%,#6c63ff 55%,#2980b9 68%,#1abc9c 80%,#f39c12 92%,#f5a623 100%);
+      background-size: 400% 400%; animation: gradientShift 12s ease infinite;
     }
-
     @keyframes gradientShift {
-      0%   { background-position: 0% 50%;   transform: scale(1.05) translateX(0)   translateY(0); }
-      25%  { background-position: 100% 20%; transform: scale(1.08) translateX(-2%) translateY(1%); }
-      50%  { background-position: 50% 100%; transform: scale(1.05) translateX(1%)  translateY(-1%); }
-      75%  { background-position: 20% 0%;   transform: scale(1.07) translateX(-1%) translateY(2%); }
-      100% { background-position: 0% 50%;   transform: scale(1.05) translateX(0)   translateY(0); }
+      0%   { background-position:0% 50%;   transform:scale(1.05) translateX(0) translateY(0); }
+      25%  { background-position:100% 20%; transform:scale(1.08) translateX(-2%) translateY(1%); }
+      50%  { background-position:50% 100%; transform:scale(1.05) translateX(1%) translateY(-1%); }
+      75%  { background-position:20% 0%;   transform:scale(1.07) translateX(-1%) translateY(2%); }
+      100% { background-position:0% 50%;   transform:scale(1.05) translateX(0) translateY(0); }
     }
-
-    .orb {
-      position: absolute;
-      border-radius: 50%;
-      mix-blend-mode: screen;
-      filter: blur(60px);
-      opacity: 0.35;
-      animation: float 8s ease-in-out infinite;
-    }
-    .orb1 { width: 500px; height: 500px; background: #ffd700; top: -10%; left: -10%; animation-delay: 0s; }
-    .orb2 { width: 400px; height: 400px; background: #ff6b9d; top: 40%; right: -8%; animation-delay: 2s; }
-    .orb3 { width: 300px; height: 300px; background: #00d2ff; bottom: -5%; left: 30%; animation-delay: 4s; }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0) scale(1); }
-      50%       { transform: translateY(-30px) scale(1.05); }
-    }
+    .orb { position:absolute; border-radius:50%; mix-blend-mode:screen; filter:blur(60px); opacity:0.35; animation:float 8s ease-in-out infinite; }
+    .orb1 { width:500px; height:500px; background:#ffd700; top:-10%; left:-10%; animation-delay:0s; }
+    .orb2 { width:400px; height:400px; background:#ff6b9d; top:40%; right:-8%; animation-delay:2s; }
+    .orb3 { width:300px; height:300px; background:#00d2ff; bottom:-5%; left:30%; animation-delay:4s; }
+    @keyframes float { 0%,100%{transform:translateY(0) scale(1);}  50%{transform:translateY(-30px) scale(1.05);} }
 
     .login-card {
-      position: relative;
-      background: rgba(255,255,255,0.18);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      border: 1px solid rgba(255,255,255,0.35);
-      border-radius: 28px;
-      padding: 52px 48px;
-      width: 420px;
-      box-shadow: 0 32px 80px rgba(0,0,0,0.3);
-      animation: cardIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
+      position:relative; background:rgba(255,255,255,0.18); backdrop-filter:blur(28px);
+      border:1px solid rgba(255,255,255,0.35); border-radius:28px; padding:52px 48px;
+      width:420px; box-shadow:0 32px 80px rgba(0,0,0,0.3);
+      animation:cardIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
     }
-
-    @keyframes cardIn {
-      from { opacity: 0; transform: translateY(40px) scale(0.95); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    .login-logo {
-      display: flex; align-items: center; gap: 12px;
-      margin-bottom: 32px;
-    }
-
-    .login-logo-icon {
-      width: 44px; height: 44px;
-      background: #1a1a2e;
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .login-logo-icon svg { width: 24px; height: 24px; }
-
-    .login-logo-text { font-size: 20px; font-weight: 700; color: #fff; }
-
-    .login-headline {
-      font-size: 28px; font-weight: 700;
-      color: #fff;
-      line-height: 1.25;
-      margin-bottom: 8px;
-    }
-    .login-sub {
-      font-size: 14px; color: rgba(255,255,255,0.75);
-      margin-bottom: 36px; line-height: 1.5;
-    }
-
+    @keyframes cardIn { from{opacity:0;transform:translateY(40px) scale(0.95);} to{opacity:1;transform:translateY(0) scale(1);} }
+    .login-logo { display:flex; align-items:center; gap:12px; margin-bottom:32px; }
+    .login-logo-icon { width:44px; height:44px; background:#1a1a2e; border-radius:12px; display:flex; align-items:center; justify-content:center; }
+    .login-logo-icon svg { width:24px; height:24px; }
+    .login-logo-text { font-size:20px; font-weight:700; color:#fff; }
+    .login-headline { font-size:28px; font-weight:700; color:#fff; line-height:1.25; margin-bottom:8px; }
+    .login-sub { font-size:14px; color:rgba(255,255,255,0.75); margin-bottom:36px; line-height:1.5; }
     .auth-btn {
-      display: flex; align-items: center; justify-content: center; gap: 12px;
-      width: 100%; padding: 14px 20px;
-      border-radius: 14px; border: none; cursor: pointer;
-      font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600;
-      transition: all 0.2s ease;
-      margin-bottom: 12px;
+      display:flex; align-items:center; justify-content:center; gap:12px;
+      width:100%; padding:14px 20px; border-radius:14px; border:none; cursor:pointer;
+      font-family:'Inter',sans-serif; font-size:15px; font-weight:600;
+      transition:all 0.2s ease; margin-bottom:12px;
     }
-    .auth-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-    .auth-btn:active { transform: translateY(0); }
+    .auth-btn:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.2); }
+    .auth-btn:active { transform:translateY(0); }
+    .btn-google { background:#fff; color:#1a1a2e; }
+    .btn-github { background:#1a1a2e; color:#fff; }
+    .auth-btn svg { width:20px; height:20px; flex-shrink:0; }
+    .login-divider { display:flex; align-items:center; gap:12px; margin:20px 0; }
+    .login-divider::before,.login-divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.25); }
+    .login-divider span { font-size:13px; color:rgba(255,255,255,0.6); }
+    .login-terms { text-align:center; font-size:12px; color:rgba(255,255,255,0.55); margin-top:24px; line-height:1.5; }
+    .login-terms a { color:rgba(255,255,255,0.8); text-decoration:underline; }
 
-    .btn-google { background: #fff; color: #1a1a2e; }
-    .btn-github { background: #1a1a2e; color: #fff; }
+    /* ── DASHBOARD ── */
+    #dashboard { display:none; height:100vh; background:linear-gradient(135deg,#e8e8f5 0%,#f5f0ff 50%,#ede8f5 100%); }
+    .app-shell { display:flex; height:100vh; padding:20px; gap:20px; }
 
-    .auth-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
-
-    .login-divider {
-      display: flex; align-items: center; gap: 12px;
-      margin: 20px 0;
-    }
-    .login-divider::before, .login-divider::after {
-      content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.25);
-    }
-    .login-divider span { font-size: 13px; color: rgba(255,255,255,0.6); }
-
-    .login-terms {
-      text-align: center; font-size: 12px;
-      color: rgba(255,255,255,0.55);
-      margin-top: 24px; line-height: 1.5;
-    }
-    .login-terms a { color: rgba(255,255,255,0.8); text-decoration: underline; }
-
-
-    /* ─── DASHBOARD ─── */
-    #dashboard {
-      display: none;
-      height: 100vh;
-      background: linear-gradient(135deg, #e8e8f5 0%, #f5f0ff 50%, #ede8f5 100%);
-    }
-
-    .app-shell {
-      display: flex; height: 100vh; padding: 20px; gap: 20px;
-    }
-
-    /* Sidebar */
     .sidebar {
-      width: 60px; flex-shrink: 0;
-      display: flex; flex-direction: column; align-items: center;
-      gap: 8px; padding: 12px 0;
+      width:60px; flex-shrink:0; display:flex; flex-direction:column;
+      align-items:center; gap:8px; padding:12px 0;
     }
+    .sidebar-logo { width:40px; height:40px; background:#1a1a2e; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:16px; flex-shrink:0; }
+    .sidebar-btn { width:40px; height:40px; border-radius:12px; border:none; background:transparent; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#888; transition:all 0.2s; }
+    .sidebar-btn:hover,.sidebar-btn.active { background:rgba(26,26,46,0.08); color:#1a1a2e; }
+    .sidebar-btn svg { width:18px; height:18px; }
+    .sidebar-spacer { flex:1; }
+    .sidebar-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#6c63ff,#f5a623); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:13px; cursor:pointer; }
 
-    .sidebar-logo {
-      width: 40px; height: 40px;
-      background: #1a1a2e;
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 16px; flex-shrink: 0;
-    }
-    .sidebar-logo svg { width: 22px; height: 22px; }
-
-    .sidebar-btn {
-      width: 40px; height: 40px;
-      border-radius: 12px; border: none; background: transparent;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; color: #888;
-      transition: all 0.2s;
-    }
-    .sidebar-btn:hover, .sidebar-btn.active {
-      background: rgba(26,26,46,0.08); color: #1a1a2e;
-    }
-    .sidebar-btn svg { width: 18px; height: 18px; }
-
-    .sidebar-spacer { flex: 1; }
-
-    .sidebar-avatar {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: linear-gradient(135deg, #6c63ff, #f5a623);
-      display: flex; align-items: center; justify-content: center;
-      color: #fff; font-weight: 700; font-size: 13px;
-      cursor: pointer;
-    }
-
-    /* Main panel */
     .main-panel {
-      flex: 1;
-      background: rgba(255,255,255,0.55);
-      backdrop-filter: blur(20px);
-      border-radius: 24px;
-      border: 1px solid rgba(255,255,255,0.7);
-      display: flex; flex-direction: column;
-      overflow: hidden;
-      box-shadow: 0 8px 40px rgba(108,99,255,0.08);
+      flex:1; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px);
+      border-radius:24px; border:1px solid rgba(255,255,255,0.7);
+      display:flex; flex-direction:column; overflow:hidden;
+      box-shadow:0 8px 40px rgba(108,99,255,0.08);
     }
+    .panel-header { display:flex; align-items:center; padding:20px 28px; border-bottom:1px solid var(--border); gap:12px; }
+    .panel-header-left { display:flex; align-items:center; gap:10px; }
+    .model-pill { display:flex; align-items:center; gap:6px; background:rgba(26,26,46,0.06); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:500; color:#555; cursor:pointer; border:none; font-family:'Inter',sans-serif; }
+    .model-pill select { border:none; background:transparent; font-family:'Inter',sans-serif; font-size:13px; font-weight:500; color:#555; cursor:pointer; outline:none; }
+    .panel-title { flex:1; text-align:center; font-size:14px; font-weight:500; color:#888; }
 
-    /* Header */
-    .panel-header {
-      display: flex; align-items: center;
-      padding: 20px 28px;
-      border-bottom: 1px solid var(--border);
+    /* API key status */
+    .api-status-btn {
+      display:flex; align-items:center; gap:6px; padding:7px 14px;
+      border-radius:20px; font-size:12px; font-weight:600; border:none;
+      cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s;
     }
-    .panel-header-left { display: flex; align-items: center; gap: 10px; }
-    .model-pill {
-      display: flex; align-items: center; gap: 6px;
-      background: rgba(26,26,46,0.06);
-      border-radius: 20px; padding: 6px 14px;
-      font-size: 13px; font-weight: 500; color: #555;
-      cursor: pointer; border: none; font-family: 'Inter', sans-serif;
-    }
-    .model-pill svg { width: 14px; height: 14px; }
-    .model-pill select {
-      border: none; background: transparent;
-      font-family: 'Inter', sans-serif; font-size: 13px;
-      font-weight: 500; color: #555; cursor: pointer; outline: none;
-      max-width: 120px;
-    }
+    .api-status-btn.set { background:rgba(26,188,156,0.12); color:#1abc9c; }
+    .api-status-btn.unset { background:rgba(245,166,35,0.12); color:#e67e22; }
+    .api-dot { width:7px; height:7px; border-radius:50%; }
+    .api-status-btn.set .api-dot { background:#1abc9c; animation:pulse 2s infinite; }
+    .api-status-btn.unset .api-dot { background:#e67e22; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
 
-    .panel-title {
-      flex: 1; text-align: center;
-      font-size: 14px; font-weight: 500; color: #888;
-    }
+    .panel-content { flex:1; overflow-y:auto; padding:40px 36px 24px; }
+    .welcome-heading { font-size:34px; font-weight:700; line-height:1.2; margin-bottom:36px; max-width:480px; }
+    .welcome-heading span { color:#6c63ff; }
 
-    .status-pill {
-      display: flex; align-items: center; gap: 6px;
-      padding: 6px 14px; border-radius: 20px;
-      font-size: 12px; font-weight: 600;
-      border: none; font-family: 'Inter', sans-serif;
-    }
-    .status-pill.connected { background: rgba(26,188,156,0.12); color: #1abc9c; }
-    .status-pill.disconnected { background: rgba(231,76,60,0.12); color: #e74c3c; }
-    .status-dot { width: 7px; height: 7px; border-radius: 50%; }
-    .status-pill.connected .status-dot { background: #1abc9c; animation: pulse 2s infinite; }
-    .status-pill.disconnected .status-dot { background: #e74c3c; }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
+    .cards-row { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:36px; }
+    .feature-card { background:#fff; border-radius:var(--radius); padding:24px; border:1px solid var(--border); cursor:pointer; transition:all 0.2s ease; box-shadow:0 2px 12px rgba(0,0,0,0.04); }
+    .feature-card:hover { transform:translateY(-3px); box-shadow:0 12px 32px rgba(108,99,255,0.12); border-color:rgba(108,99,255,0.2); }
+    .feature-card.active { border-color:#6c63ff; box-shadow:0 0 0 3px rgba(108,99,255,0.12); }
+    .card-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:20px; }
+    .card-icon.purple { background:rgba(108,99,255,0.12); }
+    .card-icon.green  { background:rgba(26,188,156,0.12); }
+    .card-icon.orange { background:rgba(245,166,35,0.12); }
+    .card-title { font-size:15px; font-weight:600; margin-bottom:6px; }
+    .card-desc { font-size:13px; color:#888; line-height:1.5; }
+    .card-tag { font-size:12px; color:#aaa; margin-top:16px; font-weight:500; }
 
-    /* Content */
-    .panel-content {
-      flex: 1; overflow-y: auto; padding: 40px 36px 24px;
-    }
-
-    .welcome-heading {
-      font-size: 34px; font-weight: 700; line-height: 1.2;
-      margin-bottom: 36px; max-width: 480px;
-    }
-    .welcome-heading span { color: #6c63ff; }
-
-    /* Feature cards */
-    .cards-row {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 16px; margin-bottom: 36px;
-    }
-
-    .feature-card {
-      background: #fff;
-      border-radius: var(--radius);
-      padding: 24px;
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-    }
-    .feature-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 32px rgba(108,99,255,0.12);
-      border-color: rgba(108,99,255,0.2);
-    }
-    .feature-card.active {
-      border-color: #6c63ff;
-      box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
-    }
-
-    .card-icon {
-      width: 44px; height: 44px;
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px; margin-bottom: 20px;
-    }
-    .card-icon.purple { background: rgba(108,99,255,0.12); }
-    .card-icon.green  { background: rgba(26,188,156,0.12); }
-    .card-icon.orange { background: rgba(245,166,35,0.12); }
-
-    .card-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-    .card-desc { font-size: 13px; color: #888; line-height: 1.5; }
-    .card-tag { font-size: 12px; color: #aaa; margin-top: 16px; font-weight: 500; }
-
-    /* Upload zone */
     .upload-zone {
-      background: #fff;
-      border-radius: var(--radius);
-      border: 2px dashed #d0d0e8;
-      padding: 32px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 12px; text-align: center;
-      cursor: pointer; transition: all 0.2s;
-      margin-bottom: 16px;
+      background:#fff; border-radius:var(--radius); border:2px dashed #d0d0e8;
+      padding:32px; display:flex; flex-direction:column; align-items:center;
+      justify-content:center; gap:12px; text-align:center;
+      cursor:pointer; transition:all 0.2s; margin-bottom:16px;
     }
-    .upload-zone:hover, .upload-zone.dragover {
-      border-color: #6c63ff;
-      background: rgba(108,99,255,0.03);
-    }
-    .upload-zone-icon { font-size: 36px; }
-    .upload-zone-title { font-size: 16px; font-weight: 600; }
-    .upload-zone-sub { font-size: 13px; color: #888; }
-    .upload-zone input { display: none; }
+    .upload-zone:hover,.upload-zone.dragover { border-color:#6c63ff; background:rgba(108,99,255,0.03); }
+    .upload-zone-icon { font-size:36px; }
+    .upload-zone-title { font-size:16px; font-weight:600; }
+    .upload-zone-sub { font-size:13px; color:#888; }
+    .upload-zone input { display:none; }
 
-    /* Bottom bar */
-    .panel-bottom {
-      padding: 0 28px 24px;
-    }
+    .panel-bottom { padding:0 28px 24px; }
+    .input-bar { background:#fff; border-radius:16px; border:1px solid var(--border); padding:14px 18px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 12px rgba(0,0,0,0.04); }
+    .input-bar-add { width:30px; height:30px; border-radius:8px; background:rgba(26,26,46,0.06); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#555; flex-shrink:0; font-size:18px; font-weight:300; }
+    .input-bar input { flex:1; border:none; outline:none; font-family:'Inter',sans-serif; font-size:14px; color:#555; background:transparent; }
+    .input-bar input::placeholder { color:#bbb; }
+    .input-send { width:32px; height:32px; border-radius:8px; background:#1a1a2e; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:opacity 0.2s; }
+    .input-send:hover { opacity:0.8; }
+    .input-send:disabled { opacity:0.4; cursor:not-allowed; }
+    .input-send svg { width:14px; height:14px; }
+    .quick-actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+    .quick-pill { display:flex; align-items:center; gap:6px; background:#1a1a2e; color:#fff; border:none; border-radius:20px; padding:8px 16px; font-size:13px; font-weight:500; cursor:pointer; font-family:'Inter',sans-serif; transition:opacity 0.2s; }
+    .quick-pill:hover { opacity:0.8; }
 
-    .input-bar {
-      background: #fff;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      padding: 14px 18px;
-      display: flex; align-items: center; gap: 12px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-    }
+    .result-panel { display:none; background:#fff; border-radius:var(--radius); border:1px solid var(--border); padding:28px; margin-bottom:20px; animation:slideIn 0.3s ease; }
+    @keyframes slideIn { from{opacity:0;transform:translateY(12px);} to{opacity:1;transform:translateY(0);} }
+    .result-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+    .result-title { font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .result-actions { display:flex; gap:8px; align-items:center; }
+    .result-copy-btn { padding:6px 14px; border-radius:8px; background:#f0f0f8; border:none; cursor:pointer; font-size:12px; font-weight:600; color:#555; font-family:'Inter',sans-serif; transition:all 0.2s; }
+    .result-copy-btn:hover { background:#e0e0f0; }
+    .result-close { width:32px; height:32px; border-radius:8px; background:#f5f5f5; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; color:#888; }
+    .result-filename { font-size:12px; color:#aaa; font-weight:500; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+    .result-body { font-size:14px; line-height:1.9; color:#444; white-space:pre-wrap; }
+    .result-cursor { display:inline-block; width:2px; height:1em; background:#6c63ff; vertical-align:text-bottom; margin-left:2px; animation:blink 0.9s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
 
-    .input-bar-add {
-      width: 30px; height: 30px; border-radius: 8px;
-      background: rgba(26,26,46,0.06);
-      border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: #555; flex-shrink: 0; font-size: 18px; font-weight: 300;
-    }
+    .processing-indicator { display:none; align-items:center; gap:10px; font-size:14px; color:#6c63ff; padding:12px 0; }
+    .spinner { width:18px; height:18px; border:2px solid rgba(108,99,255,0.2); border-top-color:#6c63ff; border-radius:50%; animation:spin 0.7s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg);} }
 
-    .input-bar input {
-      flex: 1; border: none; outline: none;
-      font-family: 'Inter', sans-serif; font-size: 14px; color: #555;
-      background: transparent;
+    /* ── API KEY MODAL ── */
+    .modal-overlay {
+      display:none; position:fixed; inset:0; z-index:500;
+      background:rgba(10,10,30,0.6); backdrop-filter:blur(8px);
+      align-items:center; justify-content:center;
     }
-    .input-bar input::placeholder { color: #bbb; }
+    .modal-overlay.show { display:flex; }
+    .modal {
+      background:#fff; border-radius:24px; padding:40px 40px 36px;
+      width:480px; max-width:95vw;
+      box-shadow:0 32px 80px rgba(0,0,0,0.25);
+      animation:cardIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .modal-logo { display:flex; align-items:center; gap:10px; margin-bottom:24px; }
+    .modal-logo-icon { width:38px; height:38px; background:linear-gradient(135deg,#6c63ff,#f5a623); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+    .modal-logo-text { font-size:18px; font-weight:700; color:#1a1a2e; }
+    .modal h2 { font-size:22px; font-weight:700; margin-bottom:8px; }
+    .modal p { font-size:14px; color:#666; line-height:1.6; margin-bottom:24px; }
+    .modal-steps { background:#f8f8ff; border-radius:12px; padding:16px 20px; margin-bottom:24px; }
+    .modal-steps ol { padding-left:18px; }
+    .modal-steps li { font-size:13px; color:#555; line-height:2; }
+    .modal-steps a { color:#6c63ff; font-weight:600; text-decoration:none; }
+    .modal-steps a:hover { text-decoration:underline; }
+    .modal-input-label { font-size:13px; font-weight:600; color:#444; margin-bottom:8px; display:block; }
+    .modal-input {
+      width:100%; padding:13px 16px; border-radius:12px;
+      border:1.5px solid var(--border); font-family:'Inter',sans-serif;
+      font-size:14px; color:#1a1a2e; outline:none; transition:border 0.2s;
+      margin-bottom:16px;
+    }
+    .modal-input:focus { border-color:#6c63ff; }
+    .modal-input::placeholder { color:#bbb; }
+    .modal-actions { display:flex; gap:10px; }
+    .modal-save-btn {
+      flex:1; padding:13px; background:#1a1a2e; color:#fff; border:none;
+      border-radius:12px; font-size:15px; font-weight:600; cursor:pointer;
+      font-family:'Inter',sans-serif; transition:opacity 0.2s;
+    }
+    .modal-save-btn:hover { opacity:0.85; }
+    .modal-cancel-btn {
+      padding:13px 20px; background:#f0f0f8; color:#555; border:none;
+      border-radius:12px; font-size:15px; font-weight:600; cursor:pointer;
+      font-family:'Inter',sans-serif; transition:opacity 0.2s;
+    }
+    .modal-cancel-btn:hover { opacity:0.8; }
+    .modal-error { font-size:13px; color:#e74c3c; margin-top:-8px; margin-bottom:12px; display:none; }
 
-    .input-send {
-      width: 32px; height: 32px; border-radius: 8px;
-      background: #1a1a2e; border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      transition: opacity 0.2s;
-    }
-    .input-send:hover { opacity: 0.8; }
-    .input-send:disabled { opacity: 0.4; cursor: not-allowed; }
-    .input-send svg { width: 14px; height: 14px; color: #fff; }
+    .toast { position:fixed; bottom:32px; right:32px; background:#1a1a2e; color:#fff; padding:14px 20px; border-radius:14px; font-size:14px; font-weight:500; box-shadow:0 8px 32px rgba(0,0,0,0.2); transform:translateY(20px); opacity:0; transition:all 0.3s ease; pointer-events:none; z-index:999; }
+    .toast.show { transform:translateY(0); opacity:1; }
 
-    .quick-actions {
-      display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
-    }
+    .panel-content::-webkit-scrollbar { width:6px; }
+    .panel-content::-webkit-scrollbar-track { background:transparent; }
+    .panel-content::-webkit-scrollbar-thumb { background:#ddd; border-radius:3px; }
 
-    .quick-pill {
-      display: flex; align-items: center; gap: 6px;
-      background: #1a1a2e; color: #fff;
-      border: none; border-radius: 20px; padding: 8px 16px;
-      font-size: 13px; font-weight: 500; cursor: pointer;
-      font-family: 'Inter', sans-serif;
-      transition: opacity 0.2s;
-    }
-    .quick-pill:hover { opacity: 0.8; }
-
-    /* Result Panel */
-    .result-panel {
-      display: none;
-      background: #fff;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      padding: 28px;
-      margin-bottom: 20px;
-      animation: slideIn 0.3s ease;
-    }
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .result-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 20px;
-    }
-    .result-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .result-actions { display: flex; gap: 8px; align-items: center; }
-    .result-copy-btn {
-      padding: 6px 14px; border-radius: 8px; background: #f0f0f8;
-      border: none; cursor: pointer; font-size: 12px; font-weight: 600;
-      color: #555; font-family: 'Inter', sans-serif; transition: all 0.2s;
-    }
-    .result-copy-btn:hover { background: #e0e0f0; }
-    .result-close {
-      width: 32px; height: 32px; border-radius: 8px; background: #f5f5f5;
-      border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
-      font-size: 16px; color: #888;
-    }
-
-    .result-filename {
-      font-size: 12px; color: #aaa; font-weight: 500;
-      margin-bottom: 16px; padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .result-body {
-      font-size: 14px; line-height: 1.9; color: #444;
-      white-space: pre-wrap;
-    }
-
-    /* Cursor blink for streaming */
-    .result-cursor {
-      display: inline-block;
-      width: 2px; height: 1em;
-      background: #6c63ff;
-      vertical-align: text-bottom;
-      margin-left: 2px;
-      animation: blink 0.9s step-end infinite;
-    }
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-    .processing-indicator {
-      display: none;
-      align-items: center; gap: 10px;
-      font-size: 14px; color: #6c63ff; padding: 12px 0;
-    }
-    .spinner {
-      width: 18px; height: 18px;
-      border: 2px solid rgba(108,99,255,0.2);
-      border-top-color: #6c63ff;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Ollama error banner */
-    .error-banner {
-      display: none;
-      background: rgba(231,76,60,0.08);
-      border: 1px solid rgba(231,76,60,0.2);
-      border-radius: 14px;
-      padding: 16px 20px;
-      margin-bottom: 20px;
-      font-size: 13px; line-height: 1.6;
-      color: #c0392b;
-    }
-    .error-banner strong { display: block; margin-bottom: 4px; font-size: 14px; }
-    .error-banner code {
-      background: rgba(231,76,60,0.1); padding: 2px 6px;
-      border-radius: 4px; font-family: monospace;
-    }
-
-    /* Toast */
-    .toast {
-      position: fixed; bottom: 32px; right: 32px;
-      background: #1a1a2e; color: #fff;
-      padding: 14px 20px; border-radius: 14px;
-      font-size: 14px; font-weight: 500;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-      transform: translateY(20px); opacity: 0;
-      transition: all 0.3s ease; pointer-events: none;
-      z-index: 999;
-    }
-    .toast.show { transform: translateY(0); opacity: 1; }
-
-    /* Scrollbar */
-    .panel-content::-webkit-scrollbar { width: 6px; }
-    .panel-content::-webkit-scrollbar-track { background: transparent; }
-    .panel-content::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
-
-    /* Responsive */
-    @media (max-width: 700px) {
-      .cards-row { grid-template-columns: 1fr; }
-      .login-card { width: 340px; padding: 40px 28px; }
-      .welcome-heading { font-size: 24px; }
+    @media (max-width:700px) {
+      .cards-row { grid-template-columns:1fr; }
+      .login-card { width:340px; padding:40px 28px; }
+      .welcome-heading { font-size:24px; }
+      .modal { padding:28px 24px; }
     }
   </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════ LOGIN PAGE -->
+<!-- ═══ LOGIN PAGE ═══ -->
 <div id="login-page">
   <div class="login-bg"></div>
   <div class="orb orb1"></div>
   <div class="orb orb2"></div>
   <div class="orb orb3"></div>
-
   <div class="login-card">
     <div class="login-logo">
       <div class="login-logo-icon">
@@ -525,38 +249,52 @@
       </div>
       <span class="login-logo-text">MediSimplify</span>
     </div>
-
     <div class="login-headline">Understand Your<br>Medical Results</div>
-    <div class="login-sub">Upload a medical PDF and get a plain-English explanation powered by local AI — private, fast, and free.</div>
-
+    <div class="login-sub">Upload a medical PDF and get a plain-English explanation powered by Groq AI — fast, accurate, and free.</div>
     <button class="auth-btn btn-google" id="btn-google" onclick="signIn('Google')">
-      <svg viewBox="0 0 24 24">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-      </svg>
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       Continue with Google
     </button>
-
     <div class="login-divider"><span>or</span></div>
-
     <button class="auth-btn btn-github" id="btn-github" onclick="signIn('GitHub')">
-      <svg viewBox="0 0 24 24" fill="white">
-        <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
       Continue with GitHub
     </button>
-
     <p class="login-terms">By signing in you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</p>
   </div>
 </div>
 
 
-<!-- ═══════════════════════════════════════════ DASHBOARD -->
+<!-- ═══ API KEY MODAL ═══ -->
+<div class="modal-overlay" id="api-modal">
+  <div class="modal">
+    <div class="modal-logo">
+      <div class="modal-logo-icon">🔑</div>
+      <div class="modal-logo-text">Connect Groq AI</div>
+    </div>
+    <h2>Add your free Groq API key</h2>
+    <p>MediSimplify uses <strong>Groq</strong> to run Llama 3 in the cloud — it's fast, free, and your key is stored only in your browser.</p>
+    <div class="modal-steps">
+      <ol>
+        <li>Go to <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a></li>
+        <li>Sign up (free) and click <strong>Create API Key</strong></li>
+        <li>Copy and paste your key below</li>
+      </ol>
+    </div>
+    <label class="modal-input-label" for="api-key-input">Groq API Key</label>
+    <input type="password" class="modal-input" id="api-key-input" placeholder="gsk_..." autocomplete="off"/>
+    <div class="modal-error" id="modal-error">⚠️ Please enter a valid Groq API key (starts with gsk_)</div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" id="modal-cancel-btn" onclick="closeApiModal()">Skip for now</button>
+      <button class="modal-save-btn" onclick="saveApiKey()">Save & Connect</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ DASHBOARD ═══ -->
 <div id="dashboard">
   <div class="app-shell">
-
     <!-- Sidebar -->
     <div class="sidebar">
       <div class="sidebar-logo">
@@ -564,20 +302,18 @@
           <path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
         </svg>
       </div>
-
-      <button class="sidebar-btn active" title="Home" id="sidebar-home">
+      <button class="sidebar-btn active" title="Home">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </button>
-      <button class="sidebar-btn" title="New Analysis" id="sidebar-new" onclick="resetToUpload()">
+      <button class="sidebar-btn" title="New Analysis" onclick="resetToUpload()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="sidebar-btn" title="API Key" onclick="openApiModal(true)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
       </button>
       <button class="sidebar-btn" title="History" onclick="showToast('History coming soon!')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-4.5"/><polyline points="3 3 3 7.5 7.5 7.5"/></svg>
       </button>
-      <button class="sidebar-btn" title="Settings" onclick="showToast('Settings coming soon!')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </button>
-
       <div class="sidebar-spacer"></div>
       <div class="sidebar-avatar" id="avatar-initials">K</div>
     </div>
@@ -588,22 +324,21 @@
       <div class="panel-header">
         <div class="panel-header-left">
           <div class="model-pill">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
-            <select id="model-select" title="Choose Ollama model">
-              <option value="llama3.2">llama3.2</option>
-              <option value="llama3.1">llama3.1</option>
-              <option value="llama3">llama3</option>
-              <option value="mistral">mistral</option>
-              <option value="phi3">phi3</option>
-              <option value="gemma2">gemma2</option>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            <select id="model-select" title="Choose model">
+              <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
+              <option value="llama-3.1-8b-instant">Llama 3.1 8B (Fast)</option>
+              <option value="llama3-70b-8192">Llama 3 70B</option>
+              <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+              <option value="gemma2-9b-it">Gemma 2 9B</option>
             </select>
           </div>
         </div>
         <div class="panel-title">Medical Report Simplifier</div>
-        <div class="status-pill disconnected" id="ollama-status">
-          <div class="status-dot"></div>
-          <span id="ollama-status-text">Checking Ollama...</span>
-        </div>
+        <button class="api-status-btn unset" id="api-status-btn" onclick="openApiModal(true)">
+          <div class="api-dot"></div>
+          <span id="api-status-text">Add API Key</span>
+        </button>
       </div>
 
       <!-- Content -->
@@ -611,20 +346,18 @@
         <div class="welcome-heading">
           Hi <span id="user-name">there</span>,<br>Ready to Understand Your Results?
         </div>
-
-        <!-- Cards -->
         <div class="cards-row">
-          <div class="feature-card" onclick="triggerUpload()" id="card-upload">
+          <div class="feature-card" onclick="triggerUpload()">
             <div class="card-icon purple">📄</div>
             <div class="card-title">Upload a PDF</div>
             <div class="card-desc">Drop in your medical test results and get a clear, plain-English breakdown instantly.</div>
             <div class="card-tag">Get Started</div>
           </div>
           <div class="feature-card active">
-            <div class="card-icon green">🧬</div>
-            <div class="card-title">AI-Powered Analysis</div>
-            <div class="card-desc">Powered by a local Llama model — your data never leaves your computer. Completely private.</div>
-            <div class="card-tag">100% Private</div>
+            <div class="card-icon green">⚡</div>
+            <div class="card-title">Groq-Powered</div>
+            <div class="card-desc">Runs Llama 3 in the cloud via Groq — blazing fast, free tier available, works anywhere.</div>
+            <div class="card-tag">Free API</div>
           </div>
           <div class="feature-card" onclick="showToast('History coming soon!')">
             <div class="card-icon orange">📋</div>
@@ -634,35 +367,23 @@
           </div>
         </div>
 
-        <!-- Ollama error banner -->
-        <div class="error-banner" id="error-banner">
-          <strong>⚠️ Ollama is not running</strong>
-          Make sure Ollama is installed and running on your computer, then pull a model:<br><br>
-          1. Download Ollama at <strong>ollama.com</strong><br>
-          2. Open PowerShell and run: <code>ollama pull llama3.2</code><br>
-          3. Ollama starts automatically — then reload this page.
-        </div>
-
-        <!-- Processing indicator -->
         <div class="processing-indicator" id="processing">
           <div class="spinner"></div>
           <span id="processing-text">Extracting text from PDF...</span>
         </div>
 
-        <!-- Result Panel -->
         <div class="result-panel" id="result-panel">
           <div class="result-header">
             <div class="result-title">✅ Simplified Results</div>
             <div class="result-actions">
               <button class="result-copy-btn" id="copy-btn" onclick="copyResult()">Copy</button>
-              <button class="result-close" onclick="closeResult()" title="Close">✕</button>
+              <button class="result-close" onclick="closeResult()">✕</button>
             </div>
           </div>
           <div class="result-filename" id="result-filename"></div>
           <div class="result-body" id="result-body"></div>
         </div>
 
-        <!-- Upload Zone -->
         <div class="upload-zone" id="upload-zone" onclick="triggerUpload()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
           <input type="file" id="file-input" accept=".pdf" onchange="onFileSelected(event)"/>
           <div class="upload-zone-icon">📂</div>
@@ -691,74 +412,94 @@
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 
 <script>
-  // ── State ──────────────────────────────────────────────────
-  const OLLAMA_URL = 'http://localhost:11434';
+  // ── State ────────────────────────────────────────────────
+  const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
   let currentPdfText = '';
-  let currentFileName = '';
-  let ollamaOnline = false;
   let isStreaming = false;
 
-  // ── Ollama health check ──────────────────────────────────
-  async function checkOllama() {
-    try {
-      const res = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(3000) });
-      if (res.ok) {
-        const data = await res.json();
-        ollamaOnline = true;
-        const statusEl = document.getElementById('ollama-status');
-        const textEl   = document.getElementById('ollama-status-text');
-        statusEl.className = 'status-pill connected';
-        textEl.textContent = 'Ollama Connected';
-        document.getElementById('error-banner').style.display = 'none';
+  const SYSTEM_PROMPT = `You are a friendly and knowledgeable medical assistant.
+Your job is to take medical lab test results and explain them in simple, clear language that a patient with no medical background can understand.
+When you see test results, always:
+1. Explain what each test is measuring in plain English
+2. State whether the result is Normal, High, or Low
+3. Describe what that result means for the patient's health
+4. Highlight anything that might need attention (but avoid causing unnecessary alarm)
+5. End with a brief friendly summary
+Keep your tone warm, clear, and reassuring. Avoid medical jargon — if you must use a term, explain it immediately.`;
 
-        // Populate model select with available models
-        if (data.models && data.models.length > 0) {
-          const sel = document.getElementById('model-select');
-          sel.innerHTML = '';
-          data.models.forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m.name;
-            opt.textContent = m.name.replace(':latest', '');
-            sel.appendChild(opt);
-          });
-        }
-      } else { ollamaOffline(); }
-    } catch (e) { ollamaOffline(); }
+  // ── API Key helpers ──────────────────────────────────────
+  function getApiKey() { return localStorage.getItem('groq_api_key') || ''; }
+  function setApiKey(k) { localStorage.setItem('groq_api_key', k); }
+
+  function updateApiStatus() {
+    const key = getApiKey();
+    const btn  = document.getElementById('api-status-btn');
+    const txt  = document.getElementById('api-status-text');
+    if (key) {
+      btn.className = 'api-status-btn set';
+      txt.textContent = 'Groq Connected';
+    } else {
+      btn.className = 'api-status-btn unset';
+      txt.textContent = 'Add API Key';
+    }
   }
 
-  function ollamaOffline() {
-    ollamaOnline = false;
-    const statusEl = document.getElementById('ollama-status');
-    const textEl   = document.getElementById('ollama-status-text');
-    statusEl.className = 'status-pill disconnected';
-    textEl.textContent = 'Ollama Offline';
-    document.getElementById('error-banner').style.display = 'block';
+  // ── API Modal ────────────────────────────────────────────
+  let canSkipApiModal = false;
+
+  function openApiModal(canSkip) {
+    canSkipApiModal = !!canSkip;
+    const cancelBtn = document.getElementById('modal-cancel-btn');
+    cancelBtn.style.display = canSkip ? 'block' : 'none';
+    const existing = getApiKey();
+    if (existing) document.getElementById('api-key-input').value = existing;
+    document.getElementById('modal-error').style.display = 'none';
+    document.getElementById('api-modal').classList.add('show');
+  }
+
+  function closeApiModal() {
+    if (!canSkipApiModal) return;
+    document.getElementById('api-modal').classList.remove('show');
+  }
+
+  function saveApiKey() {
+    const val = document.getElementById('api-key-input').value.trim();
+    const errEl = document.getElementById('modal-error');
+    if (!val || !val.startsWith('gsk_')) {
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+    setApiKey(val);
+    updateApiStatus();
+    document.getElementById('api-modal').classList.remove('show');
+    showToast('✅ Groq API key saved!');
   }
 
   // ── Sign In ──────────────────────────────────────────────
   function signIn(provider) {
     const name = 'Krish';
     document.getElementById('user-name').textContent = name;
-    document.getElementById('avatar-initials').textContent = name.charAt(0).toUpperCase();
+    document.getElementById('avatar-initials').textContent = name.charAt(0);
 
     const login = document.getElementById('login-page');
-    const dash  = document.getElementById('dashboard');
-
     login.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
     login.style.opacity = '0';
     login.style.transform = 'scale(0.97)';
 
     setTimeout(() => {
       login.style.display = 'none';
-      dash.style.display = 'block';
+      document.getElementById('dashboard').style.display = 'block';
+      updateApiStatus();
       showToast(`Welcome back, ${name}! Signed in with ${provider}.`);
-      checkOllama();
-      setInterval(checkOllama, 15000); // recheck every 15s
+      // Show API modal automatically if no key set
+      if (!getApiKey()) {
+        setTimeout(() => openApiModal(false), 700);
+      }
     }, 500);
   }
 
@@ -771,194 +512,141 @@
   });
 
   // ── Upload ───────────────────────────────────────────────
-  function triggerUpload() {
-    document.getElementById('file-input').click();
-  }
-
-  function onDragOver(e) {
-    e.preventDefault();
-    document.getElementById('upload-zone').classList.add('dragover');
-  }
-  function onDragLeave(e) {
-    document.getElementById('upload-zone').classList.remove('dragover');
-  }
+  function triggerUpload() { document.getElementById('file-input').click(); }
+  function onDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('dragover'); }
+  function onDragLeave() { document.getElementById('upload-zone').classList.remove('dragover'); }
   function onDrop(e) {
     e.preventDefault();
     document.getElementById('upload-zone').classList.remove('dragover');
     const file = e.dataTransfer.files[0];
-    if (file && file.type === 'application/pdf') {
-      processFile(file);
-    } else {
-      showToast('Please drop a PDF file.');
-    }
+    if (file && file.type === 'application/pdf') processFile(file);
+    else showToast('Please drop a PDF file.');
   }
   function onFileSelected(e) {
     const file = e.target.files[0];
     if (file) processFile(file);
-    e.target.value = ''; // reset so same file can be re-uploaded
+    e.target.value = '';
   }
 
-  // ── PDF Extraction with PDF.js ───────────────────────────
+  // ── PDF extraction ───────────────────────────────────────
   async function extractPdfText(file) {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
     const pages = [];
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      const text = content.items.map(item => item.str).join(' ');
+      const text = content.items.map(it => it.str).join(' ');
       if (text.trim()) pages.push(`[Page ${i}]\n${text}`);
     }
     return pages.join('\n\n');
   }
 
-  // ── Main process ─────────────────────────────────────────
+  // ── Process file ─────────────────────────────────────────
   async function processFile(file) {
-    currentFileName = file.name;
-    showToast(`📄 Loaded: ${file.name}`);
+    if (!getApiKey()) { openApiModal(false); return; }
 
-    // Show processing state
+    showToast(`📄 Loaded: ${file.name}`);
     document.getElementById('upload-zone').style.display = 'none';
     document.getElementById('result-panel').style.display = 'none';
-    document.getElementById('error-banner').style.display = 'none';
     const proc = document.getElementById('processing');
     const procText = document.getElementById('processing-text');
     proc.style.display = 'flex';
     procText.textContent = 'Extracting text from PDF...';
 
     try {
-      // Step 1: Extract PDF text in-browser
       const pdfText = await extractPdfText(file);
       if (!pdfText.trim()) {
         proc.style.display = 'none';
-        showToast('⚠️ No readable text found. Try a text-based PDF (not a scan).');
         document.getElementById('upload-zone').style.display = 'flex';
+        showToast('⚠️ No readable text found. Try a text-based PDF, not a scan.');
         return;
       }
       currentPdfText = pdfText;
-
-      // Step 2: Check Ollama
-      if (!ollamaOnline) {
-        proc.style.display = 'none';
-        document.getElementById('error-banner').style.display = 'block';
-        document.getElementById('upload-zone').style.display = 'flex';
-        showToast('⚠️ Ollama is not running. See instructions above.');
-        return;
-      }
-
-      // Step 3: Send to Ollama with streaming
-      procText.textContent = 'Analyzing with local AI...';
-      await streamOllamaResponse(pdfText, file.name);
-
+      procText.textContent = 'Analyzing with Groq AI...';
+      await streamGroq(
+        [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: `Please simplify these medical test results into plain English:\n\n---\n${pdfText}\n---\n\nExplain each test, its result (Normal / High / Low), and what it means simply.` }],
+        `📄 ${file.name}`,
+        proc
+      );
     } catch (err) {
       proc.style.display = 'none';
       document.getElementById('upload-zone').style.display = 'flex';
-      showToast(`❌ Error: ${err.message}`);
-      console.error(err);
+      showToast(`❌ ${err.message}`);
     }
   }
 
-  // ── Stream from Ollama ────────────────────────────────────
-  async function streamOllamaResponse(pdfText, filename) {
+  // ── Stream from Groq ─────────────────────────────────────
+  async function streamGroq(messages, label, proc) {
     const model = document.getElementById('model-select').value;
-    const proc  = document.getElementById('processing');
+    const apiKey = getApiKey();
 
-    const systemPrompt = `You are a friendly and knowledgeable medical assistant.
-Your job is to take medical lab test results and explain them in simple, clear language that a patient with no medical background can understand.
+    const res = await fetch(GROQ_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({ model, messages, stream: true })
+    });
 
-When you see test results, always:
-1. Explain what each test is measuring in plain English
-2. State whether the result is Normal, High, or Low
-3. Describe what that result means for the patient's health
-4. Highlight anything that might need attention (but avoid causing unnecessary alarm)
-5. End with a brief friendly summary
-
-Keep your tone warm, clear, and reassuring. Avoid medical jargon — if you must use a medical term, immediately explain it in simple words.`;
-
-    const userMessage = `Please simplify the following medical test results into plain English:\n\n---\n${pdfText}\n---\n\nExplain each test, its result (Normal / High / Low), and what it means in simple terms.`;
-
-    try {
-      isStreaming = true;
-      const res = await fetch(`${OLLAMA_URL}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage }
-          ],
-          stream: true
-        })
-      });
-
-      if (!res.ok) {
-        throw new Error(`Ollama returned ${res.status}. Is the model "${model}" pulled?`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        setApiKey('');
+        updateApiStatus();
+        throw new Error('Invalid API key. Please re-enter it.');
       }
-
-      // Show result panel with streaming cursor
-      proc.style.display = 'none';
-      const panel      = document.getElementById('result-panel');
-      const bodyEl     = document.getElementById('result-body');
-      const filenameEl = document.getElementById('result-filename');
-      filenameEl.textContent = `📄 ${filename}  •  Model: ${model}`;
-      bodyEl.innerHTML = '';
-      panel.style.display = 'block';
-      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-      // Create cursor element
-      const cursor = document.createElement('span');
-      cursor.className = 'result-cursor';
-      bodyEl.appendChild(cursor);
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let fullText = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop(); // Keep incomplete line
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          try {
-            const json = JSON.parse(line);
-            if (json.message && json.message.content) {
-              fullText += json.message.content;
-              // Update text before cursor
-              bodyEl.childNodes[0] && bodyEl.removeChild(bodyEl.childNodes[0]);
-              const textNode = document.createTextNode(fullText);
-              bodyEl.insertBefore(textNode, cursor);
-            }
-            if (json.done) {
-              cursor.remove();
-              isStreaming = false;
-            }
-          } catch (e) { /* partial JSON line, skip */ }
-        }
-      }
-
-      cursor.remove();
-      isStreaming = false;
-      showToast('✅ Analysis complete!');
-
-    } catch (err) {
-      proc.style.display = 'none';
-      document.getElementById('upload-zone').style.display = 'flex';
-      isStreaming = false;
-      if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        ollamaOffline();
-        showToast('⚠️ Could not reach Ollama. Is it running?');
-      } else {
-        showToast(`❌ ${err.message}`);
-      }
-      throw err;
+      throw new Error(err.error?.message || `Groq returned ${res.status}`);
     }
+
+    if (proc) proc.style.display = 'none';
+
+    const panel      = document.getElementById('result-panel');
+    const bodyEl     = document.getElementById('result-body');
+    const filenameEl = document.getElementById('result-filename');
+    filenameEl.textContent = `${label}  •  ${model.split('-').slice(0,3).join(' ')}`;
+    bodyEl.innerHTML = '';
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    const cursor = document.createElement('span');
+    cursor.className = 'result-cursor';
+    bodyEl.appendChild(cursor);
+
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '', fullText = '';
+    isStreaming = true;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') { cursor.remove(); isStreaming = false; break; }
+        try {
+          const json = JSON.parse(data);
+          const delta = json.choices?.[0]?.delta?.content;
+          if (delta) {
+            fullText += delta;
+            // Replace text before cursor
+            const firstChild = bodyEl.firstChild;
+            if (firstChild && firstChild !== cursor) bodyEl.removeChild(firstChild);
+            bodyEl.insertBefore(document.createTextNode(fullText), cursor);
+          }
+        } catch (e) { /* partial line */ }
+      }
+    }
+
+    cursor.remove();
+    isStreaming = false;
+    showToast('✅ Analysis complete!');
   }
 
   // ── Follow-up questions ───────────────────────────────────
@@ -966,115 +654,46 @@ Keep your tone warm, clear, and reassuring. Avoid medical jargon — if you must
     const val = document.getElementById('question-input').value.trim();
     if (!val) return;
     if (isStreaming) { showToast('Please wait for current analysis to finish.'); return; }
+    if (!getApiKey()) { openApiModal(false); return; }
 
-    if (!ollamaOnline) {
-      showToast('⚠️ Ollama is not running.');
-      return;
-    }
-
-    const context = currentPdfText
-      ? `Context from the uploaded report:\n${currentPdfText}\n\n`
-      : '';
-
-    const model = document.getElementById('model-select').value;
-
-    // Show processing
+    const context = currentPdfText ? `Context from uploaded report:\n${currentPdfText}\n\n` : '';
+    document.getElementById('question-input').value = '';
+    document.getElementById('send-btn').disabled = true;
     document.getElementById('upload-zone').style.display = 'none';
+
     const proc = document.getElementById('processing');
     const procText = document.getElementById('processing-text');
     proc.style.display = 'flex';
-    procText.textContent = `Answering: "${val}"...`;
-    document.getElementById('question-input').value = '';
-    document.getElementById('send-btn').disabled = true;
+    procText.textContent = `Thinking...`;
 
     try {
-      isStreaming = true;
-      const res = await fetch(`${OLLAMA_URL}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a friendly medical assistant. Answer patient questions in simple, plain English. Avoid jargon.'
-            },
-            {
-              role: 'user',
-              content: `${context}Question: ${val}`
-            }
-          ],
-          stream: true
-        })
-      });
-
-      proc.style.display = 'none';
-      const panel  = document.getElementById('result-panel');
-      const bodyEl = document.getElementById('result-body');
-      const filenameEl = document.getElementById('result-filename');
-      filenameEl.textContent = `💬 Question: "${val}"`;
-      bodyEl.innerHTML = '';
-      panel.style.display = 'block';
-
-      const cursor = document.createElement('span');
-      cursor.className = 'result-cursor';
-      bodyEl.appendChild(cursor);
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let fullText = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          try {
-            const json = JSON.parse(line);
-            if (json.message && json.message.content) {
-              fullText += json.message.content;
-              bodyEl.childNodes[0] && bodyEl.removeChild(bodyEl.childNodes[0]);
-              const textNode = document.createTextNode(fullText);
-              bodyEl.insertBefore(textNode, cursor);
-            }
-            if (json.done) { cursor.remove(); isStreaming = false; }
-          } catch (e) {}
-        }
-      }
-
-      cursor.remove();
-      isStreaming = false;
-      document.getElementById('send-btn').disabled = false;
-      showToast('✅ Done!');
-
+      await streamGroq(
+        [
+          { role: 'system', content: 'You are a friendly medical assistant. Answer questions in simple plain English. Avoid jargon.' },
+          { role: 'user', content: `${context}Question: ${val}` }
+        ],
+        `💬 "${val}"`,
+        proc
+      );
     } catch (err) {
       proc.style.display = 'none';
-      isStreaming = false;
-      document.getElementById('send-btn').disabled = false;
       document.getElementById('upload-zone').style.display = 'flex';
       showToast(`❌ ${err.message}`);
+      if (err.message.includes('API key')) openApiModal(true);
     }
+    document.getElementById('send-btn').disabled = false;
   }
 
-  function handleQuestion(e) {
-    if (e.key === 'Enter') handleQuestionBtn();
-  }
-  function setQuestion(text) {
-    document.getElementById('question-input').value = text;
-    document.getElementById('question-input').focus();
-  }
+  function handleQuestion(e) { if (e.key === 'Enter') handleQuestionBtn(); }
+  function setQuestion(t) { document.getElementById('question-input').value = t; document.getElementById('question-input').focus(); }
 
   // ── Copy result ───────────────────────────────────────────
   function copyResult() {
-    const text = document.getElementById('result-body').textContent;
-    navigator.clipboard.writeText(text).then(() => {
-      showToast('📋 Copied to clipboard!');
-      document.getElementById('copy-btn').textContent = 'Copied!';
-      setTimeout(() => document.getElementById('copy-btn').textContent = 'Copy', 2000);
+    navigator.clipboard.writeText(document.getElementById('result-body').textContent).then(() => {
+      showToast('📋 Copied!');
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
     });
   }
 
@@ -1083,9 +702,7 @@ Keep your tone warm, clear, and reassuring. Avoid medical jargon — if you must
     document.getElementById('result-panel').style.display = 'none';
     document.getElementById('upload-zone').style.display = 'flex';
     currentPdfText = '';
-    currentFileName = '';
   }
-
   function resetToUpload() {
     closeResult();
     document.getElementById('processing').style.display = 'none';
@@ -1095,11 +712,11 @@ Keep your tone warm, clear, and reassuring. Avoid medical jargon — if you must
   // ── Toast ─────────────────────────────────────────────────
   let toastTimeout;
   function showToast(msg) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.classList.add('show');
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
     clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => toast.classList.remove('show'), 3500);
+    toastTimeout = setTimeout(() => t.classList.remove('show'), 3500);
   }
 </script>
 </body>
